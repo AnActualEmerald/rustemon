@@ -22,6 +22,19 @@ pub struct NamedApiResourceList<T> {
     pub results: Vec<NamedApiResource<T>>,
 }
 
+/// [ApiResourceList official documentation](https:///pokeapi.co/docs/v2#apiresourcelist)
+#[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub struct ApiResourceList<T> {
+    /// The total number of resources available from this API.
+    pub count: i64,
+    /// The URL for the next page in the list.
+    pub next: Option<String>,
+    /// The URL for the previous page in the list.
+    pub previous: Option<String>,
+    /// A list of named API resources.
+    pub results: Vec<ApiResource<T>>,
+}
+
 /// [ApiResource official documentation](https://pokeapi.co/docs/v2#apiresource)
 #[derive(Default, Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 pub struct ApiResource<T> {

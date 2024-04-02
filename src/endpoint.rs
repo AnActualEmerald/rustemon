@@ -70,6 +70,68 @@ macro_rules! endpoint {
         }
     };
 
+    ($type:ty; for $name:literal; unnamed) => {
+            use crate::model::resource::{ApiResourceList, ApiResource};
+            use crate::client::{RustemonClient, Id};
+            use crate::error::Error;
+
+            /// Returns the default page regarding the resource.
+            ///
+            /// # Arguments
+            ///
+            /// `rustemon_client` - The [RustemonClient] to use to access the resource.
+            pub async fn get_page(rustemon_client: &RustemonClient) -> Result<ApiResourceList<$type>, Error> {
+                rustemon_client.get_by_endpoint::<ApiResourceList<$type>>($name).await
+            }
+
+            /// Returns the page targeted by the parameters.
+            ///
+            /// # Arguments
+            ///
+            /// `offset` - The offset to start retrieving the data from.
+            /// `limit` - Maximum number of elements returned by the call.
+            /// `rustemon_client` - The [RustemonClient] to use to access the resource.
+            pub async fn get_page_with_param(
+                offset: i64,
+                limit: i64,
+                rustemon_client: &RustemonClient
+            ) -> Result<ApiResourceList<$type>, Error> {
+                rustemon_client.get_with_limit_and_offset::<ApiResourceList<$type>>($name, limit, offset).await
+            }
+
+            /// Returns all entries from the given resource.
+            ///
+            /// # Arguments
+            ///
+            /// `rustemon_client` - The [RustemonClient] to use to access the resource.
+            pub async fn get_all_entries(rustemon_client: &RustemonClient) -> Result<Vec<ApiResource<$type>>, Error> {
+                let mut first_page = get_page(rustemon_client).await?;
+                let first_page_entries_count = first_page.results.len() as i64;
+
+                let total_entries_count = first_page.count;
+                let other_entries_count = total_entries_count - first_page_entries_count;
+
+                let mut all_entries = Vec::with_capacity(total_entries_count as usize);
+                all_entries.append(&mut first_page.results);
+
+                let mut other_entries = get_page_with_param(first_page_entries_count, other_entries_count, rustemon_client).await?;
+                all_entries.append(&mut other_entries.results);
+
+                Ok(all_entries)
+            }
+
+            /// Returns the resource, using its id.
+            ///
+            /// # Arguments
+            ///
+            /// `id` - The unique ID of the resource to get.
+            /// `rustemon_client` - The [RustemonClient] to use to access the resource.
+            pub async fn get_by_id(id: i64, rustemon_client: &RustemonClient) -> Result<$type, Error> {
+                rustemon_client.get_by_endpoint_and_id::<$type>($name, Id::Int(id)).await
+            }
+
+    };
+
     ($type:ty; for $name:literal; with $(($sub:ident, $sub_type:ty))+) => {
 
         crate::endpoint!($type; for $name);
